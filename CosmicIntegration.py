@@ -55,7 +55,6 @@ def calculate_redshift_related_params(max_redshift=10.0, max_redshift_detection=
 
     return redshifts, n_redshifts_detection, times, time_first_SF, distances, shell_volumes
 
-
 def find_sfr(redshifts, a = 0.01, b =2.77, c = 2.90, d = 4.70):
     """
         Calculate the star forming mass per unit volume per year following
@@ -70,7 +69,6 @@ def find_sfr(redshifts, a = 0.01, b =2.77, c = 2.90, d = 4.70):
     # get value in mass per year per cubic Mpc and convert to per cubic Gpc then return
     sfr = a * ((1+redshifts)**b) / (1 + ((1+redshifts)/c)**d) * u.Msun / u.yr / u.Mpc**3
     return sfr.to(u.Msun / u.yr / u.Gpc**3).value
-
 
 def find_metallicity_distribution(redshifts, min_logZ_COMPAS, max_logZ_COMPAS,
                                   mu0=0.035, muz=-0.23, sigma_0=0.39, sigma_z=0.0, alpha =0.0,
@@ -139,9 +137,6 @@ def find_metallicity_distribution(redshifts, min_logZ_COMPAS, max_logZ_COMPAS,
     p_draw_metallicity = 1 / (max_logZ_COMPAS - min_logZ_COMPAS)
     
     return dPdlogZ, metallicities, p_draw_metallicity
-
-
-
 
 def find_formation_and_merger_rates(n_binaries, redshifts, times, time_first_SF, n_formed, dPdlogZ, metallicities, p_draw_metallicity,
                                     COMPAS_metallicites, COMPAS_delay_times, COMPAS_weights=None):
@@ -476,7 +471,6 @@ def find_detection_rate(path, filename="COMPAS_Output.h5", dco_type="BBH", weigh
 
     return detection_rate, formation_rate, merger_rate, redshifts, COMPAS, Average_SF_mass_needed, shell_volumes
 
-
 def append_rates(path, outfilename, detection_rate, formation_rate, merger_rate, redshifts, COMPAS, Average_SF_mass_needed, shell_volumes, n_redshifts_detection,
     maxz=5., sensitivity="O1", dco_type="BHBH", mu0=0.035, muz=-0.23, sigma0=0.39, sigmaz=0., alpha=0., aSF = 0.01, bSF = 2.77, cSF = 2.90, dSF = 4.70,
     append_binned_by_z = False, redshift_binsize=0.1):
@@ -657,8 +651,6 @@ def append_rates(path, outfilename, detection_rate, formation_rate, merger_rate,
     h_new.close()
     print( ('Done with append_rates :) your new files are here: %s'%(outfilename)).replace('//', '/') )
 
-
-
 def delete_rates(path, filename, mu0=0.035, muz=-0.23, sigma0=0.39, sigmaz=0., alpha=0., append_binned_by_z=False):
     """
         Delete the group containing all the rate information from your COMPAS output with weights hdf5 file
@@ -704,9 +696,6 @@ def delete_rates(path, filename, mu0=0.035, muz=-0.23, sigma0=0.39, sigmaz=0., a
             h_new.close()
             print('Done with delete_rates :) your files are here: ', path + '/' + filename )
             return
-
-
-
 
 def plot_rates(save_dir, formation_rate, merger_rate, detection_rate, redshifts, chirp_masses, show_plot = False, mu0=0.035, muz=-0.23, sigma0=0.39, sigmaz=0., alpha=0,aSF = 0.02,  bSF = 1.48, cSF = 4.45, dSF = 5.91):
     """
@@ -782,9 +771,6 @@ def plot_rates(save_dir, formation_rate, merger_rate, detection_rate, redshifts,
         plt.show()
     else:
         plt.close()
-
-
-
 
 ##################################################################
 ### 
@@ -870,7 +856,7 @@ if __name__ == "__main__":
     if args.append_rates:
         print("Appending rates!")
         n_redshifts_detection = int(args.max_redshift_detection / args.redshift_step)
-        append_rates(args.path + args.fname, args.outfname, detection_rate, formation_rate, merger_rate, redshifts, COMPAS, Average_SF_mass_needed, shell_volumes, n_redshifts_detection,
+        append_rates(args.path, args.outfname, detection_rate, formation_rate, merger_rate, redshifts, COMPAS, Average_SF_mass_needed, shell_volumes, n_redshifts_detection,
             maxz=args.max_redshift_detection, sensitivity=args.sensitivity, dco_type=args.dco_type, mu0=args.mu0, muz=args.muz, sigma0=args.sigma0, sigmaz=args.sigmaz, alpha=args.alpha,
             aSF = args.aSF,  bSF = args.bSF , cSF = args.cSF , dSF = args.dSF ,
             append_binned_by_z = args.binned_rates, redshift_binsize=args.zBinSize)
@@ -895,4 +881,3 @@ if __name__ == "__main__":
     print('CI took ', end_CI - start_CI, 's')
     print('Appending rates took ', end_append - start_append, 's')
     print('plot took ', end_plot - start_plot, 's')
-
