@@ -103,6 +103,8 @@ pip install scipy
 pip install h5py
 pip install matplotlib
 
+pip install ipykernel
+
 -----------------------------------------------------------------------------------------------------------------------
 Section 7: Mount External Storage Devices in Terminal (Ctrl+Shift+`)
 
