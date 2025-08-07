@@ -107,4 +107,4 @@ Section 7: Writing & Running Jupyter Notebooks
 3. <your-filename>.ipynb
 4. Select newly created file to open.
 5. In the top-right section of notebook, choose "Select Kernel" or "Detecting Kernels".
-6. Select Kernel > Python Environments... > compas_py (Python <version#>) miniforge3/envs/compas_py/bin/python 
+6. Select Kernel > Python Environments... > compas_py (Python <version#>) miniforge3/envs/compas_py/bin/python
