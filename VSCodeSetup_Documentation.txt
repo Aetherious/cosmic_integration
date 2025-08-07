@@ -47,6 +47,10 @@ Section 3: Setup Workspace in Explorer (Ctrl+Shift+E)
 -----------------------------------------------------------------------------------------------------------------------
 Section 4: Install conda-forge Distribution of Python using Miniforge Installer in Terminal (Ctrl+Shift+`)
 
+# Determine CPU architecture.
+# Typically, Intel CPUs have x86_64 architecture,
+# and Qualcomm CPUs have ARM64 architecture (as well as MacOS).
+
 # Download Miniforge.
 wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
 wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-aarch64.sh
@@ -85,7 +89,7 @@ echo 'conda activate compas_py' >> ~/.bashrc
 source ~/.bashrc
 
 -----------------------------------------------------------------------------------------------------------------------
-Section 6: Install Python Modules
+Section 6: Install Python Modules in Terminal (Ctrl+Shift+`)
 
 # Install Python package installer (pip):
 conda install pip
@@ -100,7 +104,19 @@ pip install h5py
 pip install matplotlib
 
 -----------------------------------------------------------------------------------------------------------------------
-Section 7: Writing & Running Jupyter Notebooks
+Section 7: Mount External Storage Devices in Terminal (Ctrl+Shift+`)
+
+# Example of mounting storage device on Windows D: drive:
+sudo mount -t drvfs D: /mnt/d
+
+# Example of mounting storage device on Windows E: drive:
+sudo mount -t drvfs E: /mnt/e
+
+# Feel free to append the mounting command to .bashrc if Linux continually fails to automatically mount the drive.
+echo 'sudo mount -t drvfs D: /mnt/d' >> ~/.bashrc
+
+-----------------------------------------------------------------------------------------------------------------------
+Section 8: Create Jupyter Notebooks in Explorer (Ctrl+Shift+E)
 
 1. Create folder in Linux home directory for Jupyter Notebooks.
 2. File > New File... 
