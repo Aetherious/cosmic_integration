@@ -1,4 +1,4 @@
-### Setup Guide for COMPAS & Cosmic Integration
+# Setup Guide for COMPAS & Cosmic Integration
 
 ## Section 1: Windows Subsystem for Linux (WSL)
 
