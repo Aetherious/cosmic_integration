@@ -4,7 +4,7 @@
 
 1. Run Terminal as an administrator.
 2. Install WSL & Ubuntu distribution of Linux.
-    `wsl --install`
+    - `wsl --install`
 3. Reboot system.
 
 ## Section 2: Visual Studio Code (VS Code)
