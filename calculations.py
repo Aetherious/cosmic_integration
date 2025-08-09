@@ -1,4 +1,55 @@
-def calculate_redshift_related_params(max_redshift=10.0, max_redshift_detection=1.0, redshift_step=0.001, z_first_SF = 10.0):
+import numpy as np
+import astropy.units as u
+import warnings 
+import time 
+import ClassCOMPAS 
+import selection_effects
+
+from constants import (
+    DEFAULT_COMPAS_FILENAME,
+    DEFAULT_OUTPUT_FILENAME,
+    DEFAULT_COSMOLOGY,
+    DEFAULT_MAX_REDSHIFT,
+    DEFAULT_MAX_REDSHIFT_DETECTION,
+    DEFAULT_REDSHIFT_STEP,
+    DEFAULT_Z_FIRST_SF,
+    DEFAULT_SENSITIVITY,
+    DEFAULT_SNR_THRESHOLD,
+    DEFAULT_M1_MIN,     
+    DEFAULT_M1_MAX,  
+    DEFAULT_M2_MIN, 
+    DEFAULT_FBIN,
+    DEFAULT_MU0,
+    DEFAULT_MUZ,
+    DEFAULT_SIGMA0,
+    DEFAULT_SIGMAZ,
+    DEFAULT_ALPHA,
+    DEFAULT_ASF,
+    DEFAULT_BSF,
+    DEFAULT_CSF,
+    DEFAULT_DSF,
+    DEFAULT_MIN_LOGZ,
+    DEFAULT_MAX_LOGZ,
+    DEFAULT_STEP_LOGZ,
+    DEFAULT_MC_MAX,
+    DEFAULT_MC_STEP,
+    DEFAULT_ETA_MAX,
+    DEFAULT_ETA_STEP,
+    DEFAULT_SNR_MAX,
+    DEFAULT_SNR_STEP,
+    DEFAULT_APPEND_RATES,
+    DEFAULT_BINNED_RATES,
+    DEFAULT_REDSHIFT_BIN_SIZE,
+    DEFAULT_DCO_TYPE
+    )
+
+def calculate_redshift_related_params(
+        max_redshift = DEFAULT_MAX_REDSHIFT,
+        max_redshift_detection = DEFAULT_MAX_REDSHIFT_DETECTION,
+        redshift_step = DEFAULT_REDSHIFT_STEP,
+        z_first_SF = DEFAULT_Z_FIRST_SF,
+        cosmology = DEFAULT_COSMOLOGY
+        ):
     """ 
         Given limits on the redshift, create an array of redshifts, times, distances and volumes
 
@@ -38,7 +89,13 @@ def calculate_redshift_related_params(max_redshift=10.0, max_redshift_detection=
 
     return redshifts, n_redshifts_detection, times, time_first_SF, distances, shell_volumes
 
-def find_sfr(redshifts, a = 0.01, b =2.77, c = 2.90, d = 4.70):
+def find_sfr(
+        redshifts,
+        a = DEFAULT_ASF,
+        b = DEFAULT_BSF,
+        c = DEFAULT_CSF,
+        d = DEFAULT_DSF
+        ):
     """
         Calculate the star forming mass per unit volume per year following
         Neijssel+19 Eq. 6, using functional form of Madau & Dickinson 2014
@@ -54,9 +111,19 @@ def find_sfr(redshifts, a = 0.01, b =2.77, c = 2.90, d = 4.70):
 
     return sfr.to(u.Msun / u.yr / u.Gpc**3).value
 
-def find_metallicity_distribution(redshifts, min_logZ_COMPAS, max_logZ_COMPAS,
-                                  mu0=0.035, muz=-0.23, sigma_0=0.39, sigma_z=0.0, alpha =0.0,
-                                  min_logZ  =-12.0, max_logZ  =0.0, step_logZ = 0.01):
+def find_metallicity_distribution(
+        redshifts,
+        min_logZ_COMPAS,
+        max_logZ_COMPAS,
+        mu0 = DEFAULT_MU0,
+        muz = DEFAULT_MUZ,
+        sigma_0 = DEFAULT_SIGMA0,
+        sigma_z = DEFAULT_SIGMAZ,
+        alpha = DEFAULT_ALPHA,
+        min_logZ = DEFAULT_MIN_LOGZ,
+        max_logZ = DEFAULT_MAX_LOGZ,
+        step_logZ = DEFAULT_STEP_LOGZ
+        ):
                                  
     """
     Calculate the distribution of metallicities at different redshifts using a log skew normal distribution
@@ -194,8 +261,16 @@ def find_formation_and_merger_rates(n_binaries, redshifts, times, time_first_SF,
     
     return formation_rate, merger_rate
 
-def compute_snr_and_detection_grids(sensitivity="O1", snr_threshold=8.0, Mc_max=300.0, Mc_step=0.1,
-                                    eta_max=0.25, eta_step=0.01, snr_max=1000.0, snr_step=0.1):
+def compute_snr_and_detection_grids(
+        sensitivity = DEFAULT_SENSITIVITY,
+        snr_threshold = DEFAULT_SNR_THRESHOLD,
+        Mc_max = DEFAULT_MC_MAX,
+        Mc_step = DEFAULT_MC_STEP,
+        eta_max = DEFAULT_ETA_MAX,
+        eta_step = DEFAULT_ETA_STEP,
+        snr_max = DEFAULT_SNR_MAX,
+        snr_step = DEFAULT_SNR_STEP
+        ):
     """
         Compute a grid of SNRs and detection probabilities for a range of masses and SNRs
 
@@ -241,8 +316,19 @@ def compute_snr_and_detection_grids(sensitivity="O1", snr_threshold=8.0, Mc_max=
 
     return snr_grid_at_1Mpc, detection_probability_from_snr
 
-def find_detection_probability(Mc, eta, redshifts, distances, n_redshifts_detection, n_binaries, snr_grid_at_1Mpc, detection_probability_from_snr,
-                                Mc_step=0.1, eta_step=0.01, snr_step=0.1):
+def find_detection_probability(
+        Mc,
+        eta,
+        redshifts,
+        distances,
+        n_redshifts_detection,
+        n_binaries,
+        snr_grid_at_1Mpc,
+        detection_probability_from_snr,
+        Mc_step = DEFAULT_MC_STEP,
+        eta_step = DEFAULT_ETA_STEP,
+        snr_step = DEFAULT_SNR_STEP
+        ):
     """
         Compute the detection probability given a grid of SNRs and detection probabilities with masses
 
@@ -292,16 +378,42 @@ def find_detection_probability(Mc, eta, redshifts, distances, n_redshifts_detect
 
     return detection_probability
 
-def find_detection_rate(path, filename="COMPAS_Output.h5", dco_type="BBH", weight_column=None,
-                        merges_hubble_time=True, pessimistic_CEE=True, no_RLOF_after_CEE=True,
-                        max_redshift=10.0, max_redshift_detection=1.0, redshift_step=0.001, z_first_SF = 10,
-                        m1_min=5 * u.Msun, m1_max=150 * u.Msun, m2_min=0.1 * u.Msun, fbin=0.7,
-                        aSF = 0.01, bSF = 2.77, cSF = 2.90, dSF = 4.70,
-                        mu0=0.035, muz=-0.23, sigma0=0.39,sigmaz=0., alpha=0.0, 
-                        min_logZ=-12.0, max_logZ=0.0, step_logZ=0.01,
-                        sensitivity="O1", snr_threshold=8, 
-                        Mc_max=300.0, Mc_step=0.1, eta_max=0.25, eta_step=0.01,
-                        snr_max=1000.0, snr_step=0.1):
+def find_detection_rate(
+        path,
+        dco_type = DEFAULT_DCO_TYPE,
+        weight_column = 'None',
+        merges_hubble_time = True,
+        pessimistic_CEE = True,
+        no_RLOF_after_CEE = True,
+        max_redshift = DEFAULT_MAX_REDSHIFT,
+        max_redshift_detection = DEFAULT_MAX_REDSHIFT_DETECTION,
+        redshift_step = DEFAULT_REDSHIFT_STEP,
+        z_first_SF = DEFAULT_Z_FIRST_SF,
+        m1_min = DEFAULT_M1_MIN,
+        m1_max = DEFAULT_M1_MAX,
+        m2_min = DEFAULT_M2_MIN,
+        fbin = DEFAULT_FBIN,
+        aSF = DEFAULT_ASF,
+        bSF = DEFAULT_BSF,
+        cSF = DEFAULT_CSF,
+        dSF = DEFAULT_DSF,
+        mu0 = DEFAULT_MU0,
+        muz = DEFAULT_MUZ,
+        sigma0 = DEFAULT_SIGMA0,
+        sigmaz = DEFAULT_SIGMAZ,
+        alpha = DEFAULT_ALPHA, 
+        min_logZ = DEFAULT_MIN_LOGZ,
+        max_logZ = DEFAULT_MAX_LOGZ,
+        step_logZ = DEFAULT_STEP_LOGZ,
+        sensitivity = DEFAULT_SENSITIVITY,
+        snr_threshold = DEFAULT_SNR_THRESHOLD, 
+        Mc_max = DEFAULT_MC_MAX,
+        Mc_step = DEFAULT_MC_STEP,
+        eta_max = DEFAULT_ETA_MAX,
+        eta_step = DEFAULT_ETA_STEP,
+        snr_max = DEFAULT_SNR_MAX,
+        snr_step = DEFAULT_SNR_STEP
+        ):
     """
         The main function of this file. Finds the detection rate, formation rate and merger rate for each
         binary in a COMPAS file at a series of redshifts defined by intput. Also returns relevant COMPAS
