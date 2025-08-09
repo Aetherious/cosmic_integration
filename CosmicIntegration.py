@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from scipy.stats import norm as NormDist
 
-import ClassCOMPAS
+import repositories.cosmic_integration_dasein.ClassCOMPAS as ClassCOMPAS
 import selection_effects
 
 import warnings
