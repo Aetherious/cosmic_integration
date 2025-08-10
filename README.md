@@ -1,6 +1,22 @@
 # Cosmic Integration
-Cosmic Integration is a tool running on the COMPAS code that synthesizes simulated universes for stars and star systems under configurable parameters and prescriptions.
+Cosmic Integration is a post-processing package for analyzing COMPAS-synthesized datasets using several user configurable parameters. COMPAS Repository: https://github.com/TeamCOMPAS/COMPAS
 
-This repository (forked from the original COMPAS repo) optimizes Cosmic Integration to be more adaptable to varying system demands, and revises the source code to better adhere with industry standards and modern computer science best practices.
+This repository project aims to revise and optimize the original Cosmic Integration script, ultimately transforming it into a deliverable and publicly-accessible Python package.
 
-COMPAS Repository: https://github.com/TeamCOMPAS/COMPAS
+## Project Goals:
+- Format
+    - Rewrite code to adhere with PEP formatting guidelines.
+    - Provide NumPy-style docstrings for all modules, classes, methods, and functions.
+- Refactor
+    - Split and refactor CosmicIntegration.py script into multiple modules to increase readability and maintainability of codebase.
+- Optimize   
+    - Rewrite code to adhere with computer science best practices and increase overall performance.
+- Upgrade
+    - Add parallelization to allow for processing of binary black hole datasets.
+    - Add file saving for calculations to prevent dataset reprocessing when modifying plots or other post-processed data.
+        - Ultimately prevents processed data from being thrown out each time.
+---
+### Reviewer & Refactorer
+Suoi-Nguon Pham – <aetheriofficial@gmail.com>
+
+Please feel free to reach out with any questions, comments, or concerns you may have!

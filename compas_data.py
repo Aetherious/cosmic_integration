@@ -1,7 +1,40 @@
-import numpy as np
-import h5py as h5
+#! /usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+COMPAS Data Class
+=================
+
+Container module for the COMPASData class.
+
+*Refactored to adhere with PEP 8 formatting guidelines and NumPy-style docstrings.
+
+Author
+------
+Unknown (TeamCOMPAS)
+
+Reviewed & Refactored
+---------------------
+Suoi-Nguon Pham <aetheriofficial@gmail.com>
+
+Date
+----
+2025-08-10 (ONGOING)
+
+License
+-------
+MIT
+"""
+
+# ====== Standard Library ======
 import os
-import totalMassEvolvedPerZ as MPZ
+
+# ====== External Packages ======
+import h5py as h5
+import numpy as np
+
+# ====== Local Imports ======
+import mass_per_z as MPZ
 
 
 class COMPASData(object):
@@ -53,15 +86,15 @@ class COMPASData(object):
         self.Mupper = Mupper  # Msun
         self.m2_min = m2_min # Msun
         self.binaryFraction = binaryFraction
-        self.totalMassEvolvedPerZ = None  # Msun
+        self.mass_per_z = None  # Msun
         self.mass_evolved_per_binary = None # Msun
 
         if not suppress_reminder:
-            print("ClassCOMPAS: Remember to self.setCOMPASDCOmask()")
-            print("                    then self.setCOMPASData()")
-            print("          and optionally self.setGridAndMassEvolved() if using a metallicity grid")
+            print("compas_data: Remember to self.set_DCO_mask()")
+            print("                    then self.set_COMPAS_data()")
+            print("          and optionally self.set_grid_and_evolved_mass() if using a metallicity grid")
 
-    def setCOMPASDCOmask(
+    def set_DCO_mask(
         self, types="BBH", withinHubbleTime=True, pessimistic=True, noRLOFafterCEE=True
     ):
         # By default, we mask for BBHs that merge within a Hubble time, assuming
@@ -69,12 +102,12 @@ class COMPASData(object):
         # not allowing immediate RLOF post-CEE
         
         stellar_type_1, stellar_type_2, hubble_flag, dco_seeds = \
-            self.get_COMPAS_variables("BSE_Double_Compact_Objects", ["Stellar_Type(1)", "Stellar_Type(2)", "Merges_Hubble_Time", "SEED"])
+            self.retreive_COMPAS_vars("BSE_Double_Compact_Objects", ["Stellar_Type(1)", "Stellar_Type(2)", "Merges_Hubble_Time", "SEED"])
         dco_seeds = dco_seeds.flatten()
 
         if types == "CHE_BBH" or types == "NON_CHE_BBH":
             stellar_type_1_zams, stellar_type_2_zams, che_ms_1, che_ms_2, sys_seeds = \
-                self.get_COMPAS_variables("BSE_System_Parameters", ["Stellar_Type@ZAMS(1)", "Stellar_Type@ZAMS(2)", "CH_on_MS(1)", "CH_on_MS(2)", "SEED"])
+                self.retreive_COMPAS_vars("BSE_System_Parameters", ["Stellar_Type@ZAMS(1)", "Stellar_Type@ZAMS(2)", "CH_on_MS(1)", "CH_on_MS(2)", "SEED"])
           
             che_mask  = np.logical_and.reduce((stellar_type_1_zams == 16, stellar_type_2_zams == 16, che_ms_1 == True, che_ms_2 == True))
             che_seeds = sys_seeds[()][che_mask]
@@ -98,13 +131,13 @@ class COMPASData(object):
         if noRLOFafterCEE or pessimistic:
 
             # get the flags and unique seeds from the Common Envelopes file
-            ce_seeds = self.get_COMPAS_variables("BSE_Common_Envelopes", "SEED")
+            ce_seeds = self.retreive_COMPAS_vars("BSE_Common_Envelopes", "SEED")
             dco_from_ce = np.in1d(ce_seeds, dco_seeds)
             dco_ce_seeds = ce_seeds[dco_from_ce]
 
             # if masking on RLOF, get flag and match seeds to dco seeds
             if noRLOFafterCEE:
-                rlof_flag = self.get_COMPAS_variables("BSE_Common_Envelopes", "Immediate_RLOF>CE")[dco_from_ce].astype(bool)
+                rlof_flag = self.retreive_COMPAS_vars("BSE_Common_Envelopes", "Immediate_RLOF>CE")[dco_from_ce].astype(bool)
                 rlof_seeds = np.unique(dco_ce_seeds[rlof_flag])
                 rlof_mask = np.logical_not(np.in1d(dco_seeds, rlof_seeds))
             else:
@@ -112,7 +145,7 @@ class COMPASData(object):
 
             # if masking on pessimistic CE, get flag and match seeds to dco seeds
             if pessimistic:
-                pessimistic_flag = self.get_COMPAS_variables("BSE_Common_Envelopes", "Optimistic_CE")[dco_from_ce].astype(bool)
+                pessimistic_flag = self.retreive_COMPAS_vars("BSE_Common_Envelopes", "Optimistic_CE")[dco_from_ce].astype(bool)
                 pessimistic_seeds = np.unique(dco_ce_seeds[pessimistic_flag])
                 pessimistic_mask = np.logical_not(np.in1d(dco_seeds, pessimistic_seeds))
             else:
@@ -131,14 +164,14 @@ class COMPASData(object):
         self.allTypesMask = type_masks["all"] * hubble_mask * rlof_mask * pessimistic_mask
         self.optimisticmask = pessimistic_mask
 
-    def setGridAndMassEvolved(self):
+    def set_grid_and_evolved_mass(self):
         # The COMPAS simulation does not evolve all stars
         # give me the correction factor for the total mass evolved
         # I assume each metallicity has the same limits, and does correction
         # factor, but the total mass evolved might be different.
         # This does not change when we change types and other masks this is
         # general to the entire simulation so calculate once
-        _, self.totalMassEvolvedPerZ = MPZ.totalMassEvolvedPerZ(
+        _, self.mass_per_z = MPZ.mass_per_z(
             path=self.path,
             Mlower=self.Mlower,
             Mupper=self.Mupper,
@@ -153,12 +186,12 @@ class COMPASData(object):
         self.metallicityGrid = np.unique(self.initialZ)
         Data.close()
 
-    def setCOMPASData(self):
+    def set_COMPAS_data(self):
         
         primary_masses, secondary_masses, formation_times, coalescence_times, dco_seeds = \
-            self.get_COMPAS_variables("BSE_Double_Compact_Objects", ["Mass(1)", "Mass(2)", "Time", "Coalescence_Time", "SEED"])
+            self.retreive_COMPAS_vars("BSE_Double_Compact_Objects", ["Mass(1)", "Mass(2)", "Time", "Coalescence_Time", "SEED"])
 
-        initial_seeds, initial_Z = self.get_COMPAS_variables("BSE_System_Parameters", ["SEED", "Metallicity@ZAMS(1)"])
+        initial_seeds, initial_Z = self.retreive_COMPAS_vars("BSE_System_Parameters", ["SEED", "Metallicity@ZAMS(1)"])
 
         # Get metallicity grid of DCOs
         self.seedsDCO = dco_seeds[self.DCOmask]
@@ -183,21 +216,21 @@ class COMPASData(object):
                 (np.multiply(self.mass2, self.mass1) ** (3.0 / 5.0)),
                 (np.add(self.mass2, self.mass1) ** (1.0 / 5.0)),
             )
-            self.Hubble = self.get_COMPAS_variables("BSE_Double_Compact_Objects", "Merges_Hubble_Time")[self.DCOmask]
+            self.Hubble = self.retreive_COMPAS_vars("BSE_Double_Compact_Objects", "Merges_Hubble_Time")[self.DCOmask]
 
-    def recalculateTrueSolarMassEvolved(self, Mlower, Mupper, binaryFraction):
+    def compute_evolved_mass(self, Mlower, Mupper, binaryFraction):
         # Possibility to test assumptions of True solar mass evolved
         self.Mlower = Mlower
         self.Mupper = Mupper
         self.binaryFraction = binaryFraction
-        _, self.totalMassEvolvedPerZ = MPZ.totalMassEvolvedPerZ(
+        _, self.mass_per_z = MPZ.mass_per_z(
             pathCOMPASh5=self.path,
             Mlower=self.Mlower,
             Mupper=self.Mupper,
             binaryFraction=self.binaryFraction,
         )
 
-    def get_COMPAS_variables(self, hdf5_file, var_names):
+    def retreive_COMPAS_vars(self, hdf5_file, var_names):
         """ 
             Get a variable or variables from a COMPAS file
 
@@ -217,12 +250,12 @@ class COMPASData(object):
             else:
                 return [compas_file[hdf5_file][var_name][...].squeeze() for var_name in var_names]
 
-    def set_sw_weights(self, column_name):
+    def set_stroopwafel_weights(self, column_name):
         """ Set STROOPWAFEL adaptive sampling weights given a column name in the BSE_Double_Compact_Objects file """
         if column_name is not None:
-            self.sw_weights = self.get_COMPAS_variables("BSE_Double_Compact_Objects", column_name)[self.DCOmask]
+            self.sw_weights = self.retreive_COMPAS_vars("BSE_Double_Compact_Objects", column_name)[self.DCOmask]
 
-    def find_star_forming_mass_per_binary_sampling(self):
+    def compute_star_forming_mass(self):
         self.mass_evolved_per_binary = MPZ.analytical_star_forming_mass_per_binary_using_kroupa_imf(
             m1_max=self.Mupper.value,
             m1_min=self.Mlower.value,
