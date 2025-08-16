@@ -37,7 +37,7 @@ class CompasData:
     tabular dataset containing the outputs of a population synthesis
     calculation.  Rather than rely on HDF5 or proprietary formats
     directly, this implementation expects the data to be supplied as a
-    commaâseparated values (CSV) file, a pickle of a Pandas
+    comma–separated values (CSV) file, a pickle of a Pandas
     ``DataFrame`` or an ``npz`` archive containing named arrays.  The
     data must include at minimum the following columns:
 
@@ -45,7 +45,7 @@ class CompasData:
     * ``stellar_type_1`` and ``stellar_type_2``: integer stellar type codes (BH=14, NS=13).
     * ``merges_hubble_time``: boolean flag indicating whether the system merges within a Hubble time.
     * ``optimistic_ce``: boolean flag indicating whether the optimistic common envelope prescription applies.
-    * ``immediate_rlof``: boolean flag for systems that experience immediate Rocheâlobe overflow postâCEE.
+    * ``immediate_rlof``: boolean flag for systems that experience immediate Roche–lobe overflow post–CEE.
     * ``metallicity``: initial metallicity of the system (mass fraction of metals).
     * ``formation_time`` and ``merger_time`` or ``delay_time``: either the formation and merger times (in Myr) or a precomputed delay time.  If both are available the delay time is computed as the difference.
 
@@ -160,7 +160,7 @@ class CompasData:
         ----------
         dco_types:
             Sequence of type identifiers.  Valid entries include ``"BBH"``
-            for binary black holes, ``"BHNS"`` for black holeâneutron
+            for binary black holes, ``"BHNS"`` for black hole–neutron
             star binaries and ``"BNS"`` for binary neutron stars.  If
             multiple types are supplied the union of all matching
             systems is selected.

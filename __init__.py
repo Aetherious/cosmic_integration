@@ -1,10 +1,9 @@
-"""Top level package for the cosmic integration utilities.
+"""Top level package for the restructured cosmic integration utilities.
 
 This package exposes the core public API of the cosmic integration codebase.
 It provides convenient accessors for the main data container, the cosmic
-integrator, and the metallicity-specific star-formation rate class.
-
-To instantiate a workflow, import the desired classes from this package:
+integrator and the metallicity–specific star–formation rate class.  To
+instantiate a workflow, import the desired classes from this package:
 
 .. code-block:: python
 
