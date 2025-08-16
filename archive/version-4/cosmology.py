@@ -3,7 +3,7 @@
 This module provides helper functions to create instances of
 `astropy.cosmology.FLRW` subclasses given a variety of input
 representations.  Users may pass ``None`` to obtain the default
-cosmology, a string corresponding to a built–in cosmology name, an
+cosmology, a string corresponding to a built-in cosmology name, an
 existing cosmology instance, or a dictionary of parameters for
 `~astropy.cosmology.LambdaCDM` or `~astropy.cosmology.wCDM`.
 """
