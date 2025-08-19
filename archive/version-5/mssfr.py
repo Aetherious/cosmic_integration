@@ -197,49 +197,26 @@ class MSSFR:
         # Multiply broadcast to combine sfr[:, None] with pz
         return sfr[:, None] * pz
 
-    def mssfr_for_bin(self, metallicity: float | np.ndarray, z: np.ndarray) -> np.ndarray:
-        r"""Return the MSSFR for one or more metallicity values across redshift.
+    def mssfr_for_bin(self, metallicity: float, z: np.ndarray) -> np.ndarray:
+        """Return the MSSFR for a single metallicity value across redshift.
 
-        This helper supports both scalar and array inputs for ``metallicity``.
-        When a single metallicity value is provided, the MSSFR grid is
-        evaluated at all supplied redshifts and the nearest metallicity bin
-        is selected.  When a one–dimensional array of metallicities is
-        passed (of the same length as ``z``), the MSSFR is computed for
-        each event individually by selecting the nearest metallicity bin
-        for the corresponding metallicity value and redshift.
+        This method interpolates the MSSFR grid onto the requested
+        metallicity by finding the nearest metallicity bin.
 
         Parameters
         ----------
         metallicity:
-            Metallicity value(s) (mass fraction of metals).  If an array
-            is supplied its shape must match that of ``z``.
+            Metallicity value (mass fraction of metals).  Must lie
+            within the bounds of the metallicity grid.
         z:
             One–dimensional array of redshifts.
 
         Returns
         -------
         ndarray
-            The MSSFR evaluated at the provided redshifts.  If
-            ``metallicity`` is an array, the returned array has the same
-            shape; otherwise it has length ``len(z)``.
+            The MSSFR evaluated at the redshifts ``z``.
         """
-        z = np.asarray(z, dtype=float)
-        # If metallicity is array–like, handle elementwise
-        if np.ndim(metallicity) > 0 and not np.isscalar(metallicity):
-            metallicity_arr = np.asarray(metallicity, dtype=float)
-            if metallicity_arr.shape != z.shape:
-                raise ValueError(
-                    "When providing an array of metallicities, its shape must match that of the redshift array."
-                )
-            # Evaluate the MSSFR grid for each redshift (len(z) x len(grid))
-            mssfr_grid = self.evaluate(z)
-            # Find nearest metallicity bin index for each metallicity value
-            # self._grid shape (n_grid,), metallicity_arr shape (n,)
-            idxs = np.abs(self._grid[None, :] - metallicity_arr[:, None]).argmin(axis=1)
-            # Select MSSFR value for each event
-            return mssfr_grid[np.arange(z.size), idxs]
-        else:
-            # Scalar metallicity: find the nearest metallicity bin
-            idx = int(np.argmin(np.abs(self._grid - float(metallicity))))
-            mssfr_grid = self.evaluate(z)  # shape (len(z), len(grid))
-            return mssfr_grid[:, idx]
+        # Find the index of the nearest metallicity bin
+        idx = np.argmin(np.abs(self._grid - metallicity))
+        mssfr_grid = self.evaluate(z)  # shape (len(z), len(grid))
+        return mssfr_grid[:, idx]

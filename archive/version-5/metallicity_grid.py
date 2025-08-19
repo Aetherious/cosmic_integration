@@ -1,4 +1,4 @@
-r"""Utilities related to metallicity grids and stellar mass evolution.
+"""Utilities related to metallicity grids and stellar mass evolution.
 
 This module provides a collection of helper functions to evaluate the
 initial mass function (IMF), compute analytic expressions for the
@@ -68,7 +68,7 @@ def _kroupa_imf(m: np.ndarray) -> np.ndarray:
 
 
 def imf_normalisation_constants(m_lower: float, m_upper: float) -> Tuple[float, float]:
-    r"""Return the normalisation constant for the Kroupa IMF and the mean mass.
+    """Return the normalisation constant for the Kroupa IMF and the mean mass.
 
     The normalisation constant ``A`` is defined such that
 
@@ -113,7 +113,7 @@ def analytical_star_forming_mass_per_binary_using_kroupa_imf(
     m2_min: float = 0.08,
     binary_fraction: float = 1.0,
 ) -> float:
-    r"""Compute the analytic star–forming mass required per binary system.
+    """Compute the analytic star–forming mass required per binary system.
 
     The cosmic integrator expresses DCO formation efficiencies in terms
     of the number of DCOs formed per unit star–forming mass.  To

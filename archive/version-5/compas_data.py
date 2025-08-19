@@ -64,15 +64,6 @@ class CompasData:
     """
 
     path: Path
-    #
-    # Optional limit on the number of rows to read when loading the data.  This
-    # is primarily intended for very large datasets stored in CSV or HDF5
-    # format.  If ``max_rows`` is ``None`` (the default) the entire file will
-    # be read.  Otherwise only the first ``max_rows`` entries are loaded.  See
-    # :mod:`syntheticstellarpopconvolve` for inspiration on chunked data
-    # access; this feature helps avoid running out of memory when working
-    # with extremely large population synthesis outputs.
-    max_rows: Optional[int] = None
     m_lower: Optional[float] = None
     m_upper: Optional[float] = None
     m2_min: Optional[float] = None
@@ -113,53 +104,17 @@ class CompasData:
         if not Path(path_str).exists():
             raise FileNotFoundError(f"Input data file not found: {path_str}")
         if path_str.endswith(".csv"):
-            # CSV loading: optionally limit rows to avoid exhausting memory
-            if self.max_rows is not None:
-                df = pd.read_csv(path_str, nrows=self.max_rows)
-            else:
-                df = pd.read_csv(path_str)
+            df = pd.read_csv(path_str)
         elif path_str.endswith(".pkl") or path_str.endswith(".pickle"):
-            # Pickle loading: Pandas does not support partial reads from pickles,
-            # therefore we load the full file and optionally truncate.  This
-            # fallback is still memory‑intensive but pickled DataFrames tend
-            # to be smaller than raw CSV/HDF files.
             df = pd.read_pickle(path_str)
-            if self.max_rows is not None:
-                df = df.iloc[: self.max_rows]
         elif path_str.endswith(".npz"):
             with np.load(path_str, allow_pickle=True) as archive:
                 columns = archive.files
                 data_dict = {col: archive[col] for col in columns}
                 df = pd.DataFrame(data_dict)
-            if self.max_rows is not None:
-                df = df.iloc[: self.max_rows]
-        elif path_str.endswith(".h5") or path_str.endswith(".hdf5"):
-            # Attempt to read HDF5 using pandas or fallback to h5py
-            try:
-                # If max_rows is specified and pandas supports partial reads,
-                # pass start/stop indices to read_hdf.  Pandas will return
-                # the specified slice of rows.  If max_rows is None the full
-                # dataset is loaded.  See the syntheticstellarpopconvolve
-                # project's chunked read implementation for a similar approach.
-                if self.max_rows is not None:
-                    df = pd.read_hdf(path_str, start=0, stop=self.max_rows)
-                else:
-                    df = pd.read_hdf(path_str)
-            except Exception:
-                try:
-                    import h5py  # type: ignore[import-not-found]
-                    with h5py.File(path_str, "r") as f:
-                        data_dict = {key: f[key][()] for key in f.keys()}
-                    df = pd.DataFrame(data_dict)
-                    if self.max_rows is not None:
-                        df = df.iloc[: self.max_rows]
-                except Exception:
-                    raise ValueError(
-                        "Unsupported HDF5 file structure or missing h5py. Provide CSV or other supported formats."
-                    )
         else:
             raise ValueError(
-                "Unsupported file format. Please provide a CSV, pickle, NPZ or HDF5 file."
+                "Unsupported file format. Please provide a CSV, pickle or NPZ file."
             )
         # Validate required columns
         required = [

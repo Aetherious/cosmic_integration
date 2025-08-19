@@ -28,8 +28,6 @@ from pathlib import Path
 from typing import List, Sequence
 
 from .compas_data import CompasData
-from .compas_data_csv import CompasDataCSV
-from .compas_data_hdf5 import CompasDataHDF5
 from .mssfr import MSSFR
 from .cosmic_integrator import CosmicIntegrator
 
@@ -105,14 +103,8 @@ def parse_arguments(args: Sequence[str]) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> None:
     """Entry point for the command line interface."""
     args = parse_arguments(argv if argv is not None else [])
-    # Load population synthesis data using appropriate subclass
-    input_path = Path(args.input_file)
-    if input_path.suffix.lower() == ".csv":
-        compas_data = CompasDataCSV(path=input_path)
-    elif input_path.suffix.lower() in {".h5", ".hdf5"}:
-        compas_data = CompasDataHDF5(path=input_path)
-    else:
-        compas_data = CompasData(path=input_path)
+    # Load population synthesis data
+    compas_data = CompasData(path=Path(args.input_file))
     compas_data.load_data()
     # Set DCO mask
     compas_data.set_dco_mask(args.dco_type)

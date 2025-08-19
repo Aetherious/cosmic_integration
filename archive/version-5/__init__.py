@@ -33,16 +33,7 @@ from .mssfr import MSSFR
 from .cosmology import get_cosmology, set_cosmology
 
 # Expose the binned integrator subpackage as a namespace
-# The binned subpackage provides cosmological integration on discretised grids.
-# It depends on optional third-party libraries (e.g. astropy) that may not
-# be available in all deployment environments.  To avoid import errors when
-# those dependencies are missing, we attempt to import the subpackage here
-# but fall back to a ``None`` placeholder if it fails.  Client code should
-# check for ``None`` before accessing ``binned``.
-try:
-    from . import binned  # type: ignore[import]
-except Exception:
-    binned = None  # type: ignore[assignment]
+from . import binned
 
 __all__ = [
     "CompasData",
@@ -50,6 +41,5 @@ __all__ = [
     "MSSFR",
     "get_cosmology",
     "set_cosmology",
-    # 'binned' may be None if optional dependencies are missing
     "binned",
 ]
