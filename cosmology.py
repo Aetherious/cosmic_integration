@@ -43,12 +43,6 @@ DEFAULT_COSMOLOGY = _cosmo_mod.Planck18
 COSMOLOGY = [DEFAULT_COSMOLOGY, DEFAULT_COSMOLOGY.name]
 
 def get_cosmology(cosmology: Optional[COSMO_TYPE] = None) -> Any:
-    # """Return a cosmology object.
-
-    # When astropy is installed this simply returns an instance of
-    # ``astropy.cosmology.FLRW`` using the supplied arguments.
-    # Otherwise it returns a :class:`SimpleCosmology` instance.
-    # """
     """Return a cosmology object using astropy.
 
     Parameters
@@ -69,7 +63,7 @@ def get_cosmology(cosmology: Optional[COSMO_TYPE] = None) -> Any:
     astropy.cosmology.FLRW
         The cosmology instance.
     """
-    # Resolve input into an astropy cosmology
+    # Resolve input into an astropy cosmology:
     if cosmology is None:
         cosm = DEFAULT_COSMOLOGY
     elif isinstance(cosmology, _cosmo_mod.FLRW):
@@ -82,9 +76,9 @@ def get_cosmology(cosmology: Optional[COSMO_TYPE] = None) -> Any:
                 f"Unknown cosmology '{cosmology}'. Check astropy.cosmology for valid names."
             ) from exc
     elif isinstance(cosmology, dict):
-        # Determine which class to use based on parameter names
+        # Determine which class to use based on parameter names:
         if "Ode0" in cosmology:
-            # Non flat cosmology
+            # Non flat cosmology:
             if "w0" in cosmology:
                 cosm = _cosmo_mod.wCDM(**cosmology)
             else:
@@ -95,7 +89,8 @@ def get_cosmology(cosmology: Optional[COSMO_TYPE] = None) -> Any:
         raise TypeError(
             "cosmology must be None, an astropy.cosmology.FLRW instance, a string or a dict"
         )
-    # Cache the cosmology and its name
+    
+    # Cache the cosmology and its name:
     COSMOLOGY[0] = cosm
     COSMOLOGY[1] = cosm.name if getattr(cosm, "name", None) else repr(cosm)
     return cosm
