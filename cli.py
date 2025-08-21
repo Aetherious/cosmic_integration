@@ -30,6 +30,15 @@ from __future__ import annotations
 import argparse
 from typing import Any
 
+try: # NumPy is a required dependency.
+    import numpy as np
+except Exception as exc:
+    # Immediately raise an informative error if NumPy cannot be imported.
+    raise ImportError(
+        "The NumPy package is required for calculating total detection rate."
+        "Please install NumPy and its dependencies."
+    ) from exc
+
 from .rate import find_detection_rate
 
 
@@ -39,7 +48,7 @@ def _positive_float(value: str) -> float:
     except ValueError as exc:
         raise argparse.ArgumentTypeError(f"{value!r} is not a valid float") from exc
     if val < 0.0:
-        raise argparse.ArgumentTypeError(f"{value!r} must be non‑negative")
+        raise argparse.ArgumentTypeError(f"{value!r} must be non-negative")
     return val
 
 
@@ -49,7 +58,7 @@ def _positive_int(value: str) -> int:
     except ValueError as exc:
         raise argparse.ArgumentTypeError(f"{value!r} is not a valid integer") from exc
     if val < 0:
-        raise argparse.ArgumentTypeError(f"{value!r} must be non‑negative")
+        raise argparse.ArgumentTypeError(f"{value!r} must be non-negative")
     return val
 
 
@@ -83,7 +92,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Any | None = None) -> None:
     parser = build_parser()
     args = parser.parse_args(argv)
-    # Map boolean options
+
+    # Map boolean options:
     merges_hubble_time = not args.no_hubble_mask
     detection_rate, formation_rate, merger_rate, redshifts, _ = find_detection_rate(
         path=args.path,
@@ -102,10 +112,8 @@ def main(argv: Any | None = None) -> None:
         n_workers=args.n_workers,
         output_filename=args.output,
     )
-    # Summarise results
-
-    import numpy as np  # import here to avoid dependency at module import time
-
+    
+    # Summarise results:
     total_detection_rate = np.sum(detection_rate, axis=0)
     print(
         f"Computed detection rates for {detection_rate.shape[0]} binaries over {detection_rate.shape[1]} redshift bins."
