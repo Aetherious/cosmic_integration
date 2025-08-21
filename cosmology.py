@@ -28,7 +28,7 @@ from typing import Union, Dict, Optional, Any
 # In the dasein rewrite astropy is treated as a hard dependency and
 # the fallback is no longer selected.
 
-try:  # astropy is now a required dependency
+try:  # astropy is a required dependency.
     from astropy import cosmology as _cosmo_mod
 except Exception as exc:
     # Immediately raise an informative error if astropy cannot be imported.
