@@ -29,17 +29,24 @@ from __future__ import annotations
 import os
 from typing import Iterable, Optional, Tuple, Union
 
-try:
-    import h5py  # type: ignore
-except Exception:  # pragma: no cover - h5py may be unavailable
-    h5py = None  # type: ignore
+try:  # h5py is a required dependency.
+    import h5py as h5
+except Exception as exc:
+    # Immediately raise an informative error if h5py cannot be imported.
+    raise ImportError(
+        "The h5py package is required to read COMPAS HDF5 files. "
+        "Install h5py or provide an alternative data loader."
+    ) from exc
+
 import numpy as np
 
-try:
+try: # SciPy is a required dependency.
     from scipy.integrate import quad
-except ImportError:  # pragma: no cover - fallback if scipy is unavailable
-    quad = None  # type: ignore
-
+except Exception as exc:
+    raise ImportError(
+        "The SciPy package is required to accurately calculate the COMPAS mass fraction. "
+        "Please install SciPy and its dependencies."
+    ) from exc
 
 class CompasData:
     """Container for reading and storing COMPAS simulation data.
@@ -86,11 +93,6 @@ class CompasData:
     ) -> None:
         if not os.path.isfile(path):
             raise FileNotFoundError(f"HDF5 file not found: {path}")
-        if h5py is None:
-            raise ImportError(
-                "The h5py package is required to read COMPAS HDF5 files. "
-                "Install h5py or provide an alternative data loader."
-            )
         self.path = path
 
         # Simulation sampling parameters used to estimate the total
@@ -157,10 +159,12 @@ class CompasData:
             consume significant memory; however this class is
             intended for moderate sized populations.
         """
-        with h5py.File(self.path, "r") as h5file:
+        with h5.File(self.path, "r") as h5file:
             group = h5file[group_name]
+
             if isinstance(variable_names, str):
                 return group[variable_names][()]
+            
             return tuple(group[name][()] for name in variable_names)
 
     # ------------------------------------------------------------------
@@ -176,7 +180,7 @@ class CompasData:
         """Select a mask on the compact binary types.
 
         The available types are ``'BBH'`` for binary black holes,
-        ``'BHNS'`` for black hole – neutron star binaries, ``'BNS'`` for
+        ``'BHNS'`` for black hole - neutron star binaries, ``'BNS'`` for
         double neutron stars and ``'all'`` to select every compact
         binary.  Optional boolean flags allow one to further filter
         out systems that do not merge within a Hubble time, systems
@@ -205,7 +209,7 @@ class CompasData:
         extracts the necessary flags to build the mask.  The mask is
         stored in :attr:`dco_mask` and applied by :meth:`load`.
         """
-        # Retrieve basic DCO properties
+        # Retrieve basic DCO properties:
         stellar_type_1, stellar_type_2, merges_hubble, seeds = self._get_variables(
             "BSE_Double_Compact_Objects",
             ["Stellar_Type(1)", "Stellar_Type(2)", "Merges_Hubble_Time", "SEED"],
@@ -229,28 +233,28 @@ class CompasData:
             raise ValueError(f"Unknown DCO type '{types}'.")
         mask_type = type_masks[types]
 
-        # Apply Hubble time mask if requested
+        # Apply Hubble time mask, if requested:
         mask_hubble = merges_hubble.astype(bool) if within_hubble_time else np.repeat(True, len(seeds))
 
         # The optimistic common envelope and Roche lobe overflow flags
         # are stored in the common envelope group.  To avoid loading
         # entire groups we read only the relevant columns.
         ce_seeds = self._get_variables("BSE_Common_Envelopes", "SEED")
-        ce_mask = np.in1d(ce_seeds, seeds)
+        ce_mask = np.isin(ce_seeds, seeds)
         if no_rlof_after_cee:
             rlof_flag = self._get_variables("BSE_Common_Envelopes", "Immediate_RLOF>CE")[ce_mask].astype(bool)
             rlof_seeds = np.unique(ce_seeds[ce_mask][rlof_flag])
-            mask_rlof = np.logical_not(np.in1d(seeds, rlof_seeds))
+            mask_rlof = np.logical_not(np.isin(seeds, rlof_seeds))
         else:
             mask_rlof = np.repeat(True, len(seeds))
         if pessimistic:
             pessimistic_flag = self._get_variables("BSE_Common_Envelopes", "Optimistic_CE")[ce_mask].astype(bool)
             pessimistic_seeds = np.unique(ce_seeds[ce_mask][pessimistic_flag])
-            mask_pessimistic = np.logical_not(np.in1d(seeds, pessimistic_seeds))
+            mask_pessimistic = np.logical_not(np.isin(seeds, pessimistic_seeds))
         else:
             mask_pessimistic = np.repeat(True, len(seeds))
 
-        # Combine masks
+        # Combine masks:
         self.dco_mask = mask_type & mask_hubble & mask_rlof & mask_pessimistic
 
     def load(self) -> None:
@@ -268,7 +272,7 @@ class CompasData:
         if self.dco_mask is None:
             raise ValueError("DCO mask has not been set.  Call set_dco_mask() first.")
 
-        # Load masses, times and seeds for DCOs
+        # Load masses, times, and seeds for DCOs:
         primary_masses, secondary_masses, formation_times, coalescence_times, seeds = self._get_variables(
             "BSE_Double_Compact_Objects",
             ["Mass(1)", "Mass(2)", "Time", "Coalescence_Time", "SEED"],
@@ -276,15 +280,15 @@ class CompasData:
         seeds = seeds.flatten()
 
         # Load initial metallicities for all systems; later we pick
-        # out those corresponding to the DCO seeds
+        # out those corresponding to the DCO seeds:
         initial_seeds, initial_Z = self._get_variables(
             "BSE_System_Parameters", ["SEED", "Metallicity@ZAMS(1)"]
         )
 
-        # Delay time is the sum of formation time and coalescence time
+        # Delay time is the sum of formation time and coalescence time:
         delay_times = formation_times + coalescence_times
 
-        # Apply mask
+        # Apply mask:
         mask = self.dco_mask
         self.mass1 = primary_masses
         self.mass2 = secondary_masses
@@ -295,15 +299,15 @@ class CompasData:
         self.mass2_masked = secondary_masses[mask]
         self.delay_times_masked = delay_times[mask]
 
-        # Identify the metallicity for each DCO by matching seeds
+        # Identify the metallicity for each DCO by matching seeds:
         if len(initial_seeds.shape) > 1:
             initial_seeds = initial_seeds.flatten()
-        mask_met = np.in1d(initial_seeds, seeds[mask])
+        mask_met = np.isin(initial_seeds, seeds[mask])
         self.metallicity_masked = initial_Z[mask_met]
         self.n_systems = len(initial_seeds)
 
         # Initialise weights to unity; these may be overridden
-        # externally via set_weights() or by find_star_forming_mass_per_binary_sampling()
+        # externally via set_weights() or by find_star_forming_mass_per_binary_sampling():
         self.sw_weights = np.ones_like(self.mass1_masked, dtype=float)
 
     def set_weights(self, weight_column: Optional[str] = None) -> None:
@@ -325,12 +329,13 @@ class CompasData:
         """
         if weight_column is None:
             return
+        
         try:
             weights = self._get_variables("BSE_Double_Compact_Objects", weight_column)
-            # Apply DCO mask
+            # Apply DCO mask:
             self.sw_weights = weights[self.dco_mask]
         except Exception:
-            # Fall back to unity weights
+            # Fall back to unity weights:
             self.sw_weights = np.ones_like(self.mass1_masked, dtype=float)
 
     # ------------------------------------------------------------------
@@ -356,10 +361,11 @@ class CompasData:
             Value of the IMF at mass ``m``.  Units are arbitrary and
             cancel in the normalisation.
         """
-        # Default parameters following Kroupa (2001)
+        # Default parameters following Kroupa (2001):
         m1, m2, m3, m4 = 0.01, 0.08, 0.5, 200.0
         a12, a23, a34 = 0.3, 1.3, 2.3
-        # Compute normalisation constants on first call
+
+        # Compute normalisation constants on first call:
         b1 = 1 / (
             (m2 ** (1 - a12) - m1 ** (1 - a12)) / (1 - a12)
             + m2 ** (-(a12 - a23)) * (m3 ** (1 - a23) - m2 ** (1 - a23)) / (1 - a23)
@@ -370,13 +376,15 @@ class CompasData:
         )
         b2 = b1 * m2 ** (-(a12 - a23))
         b3 = b2 * m3 ** (-(a23 - a34))
-        # Piecewise IMF
+
+        # Piecewise IMF:
         if m1 <= m < m2:
             return b1 * m ** (-a12)
         if m2 <= m < m3:
             return b2 * m ** (-a23)
         if m3 <= m <= m4:
             return b3 * m ** (-a34)
+        
         return 0.0
 
     def _compas_mass_fraction(self) -> float:
@@ -397,83 +405,44 @@ class CompasData:
         Notes
         -----
         The current implementation uses numerical integration from
-        ``scipy.integrate.quad`` if SciPy is available.  If SciPy is
-        not installed, a simple fallback based on mid point sums
-        approximates the integrals.  For scientific applications
-        SciPy is strongly recommended.
+        ``scipy.integrate.quad`` if SciPy is available. For
+        scientific applications, SciPy is strongly recommended.
         """
-        # Use SciPy if available for accuracy
-        if quad is not None:
-            # Unpack sampling limits; use defaults if None
-            m1_low = self.m1_min if self.m1_min is not None else 0.01
-            m1_upp = self.m1_max if self.m1_max is not None else 200.0
-            m2_low = self.m2_min if self.m2_min is not None else 0.01
-            f_bin = self.binary_fraction if self.binary_fraction is not None else 1.0
-
-            # Define mass ratio PDF as uniform between 0 and 1
-            def qpdf(q: float) -> float:
-                return 1.0
-
-            # Integrand for the full mass (no COMPAS cut)
-            def full_integral(mass: float) -> float:
-                imf_val = self._imf(mass)
-                primary_mass = imf_val * mass
-                # expected secondary mass given uniform mass ratio distribution
-                expected_secondary_mass = quad(lambda q: q * qpdf(q), 0.0, 1.0)[0] * primary_mass
-                single_stars = (1.0 - f_bin) * primary_mass
-                binary_stars = f_bin * (primary_mass + expected_secondary_mass)
-                return single_stars + binary_stars
-
-            full_mass, _ = quad(full_integral, 0.01, 200.0)
-
-            # Integrand for COMPAS sampled mass
-            def compas_integral(mass: float) -> float:
-                imf_val = self._imf(mass)
-                primary_mass = imf_val * mass
-                # fraction of secondaries below m2_low
-                f_below = quad(qpdf, 0.0, m2_low / mass if mass > 0 else 0.0)[0]
-                expected_secondary_mass = quad(
-                    lambda q: q * qpdf(q), m2_low / mass if mass > 0 else 0.0, 1.0
-                )[0] * primary_mass
-                return f_bin * (1.0 - f_below) * (primary_mass + expected_secondary_mass)
-
-            compas_mass, _ = quad(compas_integral, m1_low, m1_upp)
-            return compas_mass / full_mass
-        # Fallback: approximate integrals via midpoint sums
-        m_grid = np.linspace(0.01, 200.0, 1000)
-        dm = m_grid[1] - m_grid[0]
-        f_bin = self.binary_fraction if self.binary_fraction is not None else 1.0
-
-        # mass ratio PDF uniform
-        def qpdf(q: float) -> float:
-            return 1.0
-
-        def expected_q_integral(mass: float) -> float:
-            return 0.5  # expectation of q given uniform distribution
-
-        # full mass integral
-        full_mass = 0.0
-        for m in m_grid:
-            imf_val = self._imf(m)
-            primary_mass = imf_val * m
-            expected_secondary_mass = expected_q_integral(m) * primary_mass
-            single_stars = (1.0 - f_bin) * primary_mass
-            binary_stars = f_bin * (primary_mass + expected_secondary_mass)
-            full_mass += (single_stars + binary_stars) * dm
-
-        # compas mass integral
+        # Unpack sampling limits; use defaults if None:
         m1_low = self.m1_min if self.m1_min is not None else 0.01
         m1_upp = self.m1_max if self.m1_max is not None else 200.0
         m2_low = self.m2_min if self.m2_min is not None else 0.01
-        compas_mass = 0.0
-        for m in m_grid[(m_grid >= m1_low) & (m_grid <= m1_upp)]:
-            imf_val = self._imf(m)
-            primary_mass = imf_val * m
-            # fraction of q below threshold
-            f_below = (m2_low / m) if m > 0 else 0.0
-            f_below = max(min(f_below, 1.0), 0.0)
-            expected_secondary_mass = 0.5 * primary_mass  # expectation of q on [f_below,1]
-            compas_mass += f_bin * (1.0 - f_below) * (primary_mass + expected_secondary_mass) * dm
+        f_bin = self.binary_fraction if self.binary_fraction is not None else 1.0
+
+        # Define mass ratio PDF as uniform between 0 and 1:
+        def qpdf(q: float) -> float:
+            return 1.0
+
+        # Integrand for the full mass (no COMPAS cut):
+        def full_integral(mass: float) -> float:
+            imf_val = self._imf(mass)
+            primary_mass = imf_val * mass
+            # expected secondary mass given uniform mass ratio distribution
+            expected_secondary_mass = quad(lambda q: q * qpdf(q), 0.0, 1.0)[0] * primary_mass
+            single_stars = (1.0 - f_bin) * primary_mass
+            binary_stars = f_bin * (primary_mass + expected_secondary_mass)
+            return single_stars + binary_stars
+
+        full_mass, _ = quad(full_integral, 0.01, 200.0)
+
+        # Integrand for COMPAS sampled mass:
+        def compas_integral(mass: float) -> float:
+            imf_val = self._imf(mass)
+            primary_mass = imf_val * mass
+            # Fraction of secondaries below m2_low:
+            f_below = quad(qpdf, 0.0, m2_low / mass if mass > 0 else 0.0)[0]
+            expected_secondary_mass = quad(
+                lambda q: q * qpdf(q), m2_low / mass if mass > 0 else 0.0, 1.0
+            )[0] * primary_mass
+            return f_bin * (1.0 - f_below) * (primary_mass + expected_secondary_mass)
+
+        compas_mass, _ = quad(compas_integral, m1_low, m1_upp)
+
         return compas_mass / full_mass
 
     def find_star_forming_mass_per_binary_sampling(self) -> None:
@@ -494,23 +463,23 @@ class CompasData:
         should be set before calling this method.  If any of the
         sampling parameters are ``None`` sensible defaults are used.
         """
-        # Ensure we have loaded the data first to know the number of systems
+        # Ensure we have loaded the data first to know the number of systems:
         if self.mass1 is None or self.mass2 is None:
             raise RuntimeError("Call load() before computing star forming mass per binary.")
 
-        # Compute the fraction of total mass represented by the COMPAS sampling
+        # Compute the fraction of total mass represented by the COMPAS sampling:
         fraction = self._compas_mass_fraction()
         if fraction <= 0.0:
             raise RuntimeError("Computed COMPAS mass fraction is non positive.")
 
-        # Calculate the total mass evolved per metallicity bin from the HDF5 file
-        with h5py.File(self.path, "r") as h5file:
+        # Calculate the total mass evolved per metallicity bin from the HDF5 file:
+        with h5.File(self.path, "r") as h5file:
             all_systems = h5file["BSE_System_Parameters"]
             m1s = all_systems["Mass@ZAMS(1)"][()]
             m2s = all_systems["Mass@ZAMS(2)"][()]
             total_mass_compas = float(np.sum(m1s) + np.sum(m2s))
             n_binaries = len(m1s)
 
-        # Total mass formed in the universe represented by the simulation
+        # Total mass formed in the universe represented by the simulation:
         total_mass_universe = total_mass_compas / fraction
         self.mass_evolved_per_binary = total_mass_universe / float(n_binaries)
