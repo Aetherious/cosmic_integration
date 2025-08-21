@@ -1,61 +1,24 @@
-"""Utilities for binning two–dimensional data.
-
-This module defines a simple function for binning a two–dimensional
-array along one axis according to a set of one–dimensional bin
-edges.  It is used by the binned detection rate computer to
-coarsely bin formation and merger rate arrays.  The implementation
-here is a stub and does not perform any computation.
-
-Functions
----------
-bin_2d_data(data2d, data1d, bins, axis=0)
-    Bin a 2D array along one axis according to a 1D array of values.
-"""
-
-from __future__ import annotations
-
-from typing import Sequence
-
-import numpy as np
+from .gpu_utils import xp
 
 
-def bin_2d_data(
-    data2d: np.ndarray,
-    data1d: np.ndarray,
-    bins: Sequence[float],
-    axis: int = 0,
-) -> np.ndarray:
-    """Bin a two–dimensional array along a single axis.
+def bin_2d_data(data2d: xp, data1d: xp, bins: xp, axis=0):
+    """Bin data2d and data1d along the given axis using the given 1d bins"""
 
-    Parameters
-    ----------
-    data2d:
-        Two–dimensional array to be binned.  The axis along which the
-        binning is performed must have the same length as ``data1d``.
-    data1d:
-        One–dimensional array used to determine which row or column of
-        ``data2d`` falls into which bin.  Typically this is a vector of
-        parameters corresponding to the rows or columns of ``data2d``.
-    bins:
-        Sequence of bin edges.  The number of bins is ``len(bins)``.
-    axis:
-        Axis along which to sum the data.  If ``0`` (default), each row
-        of ``data2d`` corresponds to an entry in ``data1d``; if ``1``,
-        columns correspond.
+    num_bins = len(bins)
+    bin_data1d_falls_in = xp.digitize(data1d, bins, right=True)
 
-    Returns
-    -------
-    binned_data:
-        A two–dimensional array with the same number of columns (if
-        ``axis=0``) or rows (if ``axis=1``) as the input, and a length
-        along the binned axis equal to ``len(bins)``.  Each slice
-        contains the sum of entries in ``data2d`` whose corresponding
-        value in ``data1d`` falls into the appropriate bin.  The stub
-        implementation returns an empty array of the correct shape.
-    """
-    # The real implementation would digitise ``data1d`` into ``bins``
-    # and sum ``data2d`` accordingly.  Here we construct an array of
-    # zeros with the expected shape.
-    binned_shape = list(data2d.shape)
-    binned_shape[axis] = len(bins)
-    return np.zeros(binned_shape)
+    assert num_bins <= data2d.shape[axis], "More bins than data-rows!"
+    assert len(bin_data1d_falls_in) == len(data1d), "Something went wrong with binning"
+    assert data2d.shape[axis] == len(data1d), "Data2d and bins do not match"
+
+    # bin data
+    binned_data_shape = list(data2d.shape)
+    binned_data_shape[axis] = num_bins
+    binned_data = xp.zeros(binned_data_shape)
+
+    for i in range(num_bins):
+        if axis == 0:
+             binned_data[i, :] = xp.sum(data2d[bin_data1d_falls_in == i, :], axis=axis)
+        else:
+            binned_data[:, i] = xp.sum(data2d[:, bin_data1d_falls_in == i], axis=axis)
+    return binned_data

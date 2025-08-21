@@ -1,25 +1,7 @@
-"""Enumerations for stellar types used in binary populations.
-
-The original COMPAS code defines a large enumeration of stellar
-evolutionary stages.  In the binned integrator we only need to
-identify black holes (BH), neutron stars (NS) and white dwarfs (WD)
-when classifying double compact object types.  The full enumeration
-is provided for completeness.
-"""
-
-from __future__ import annotations
-
 from enum import Enum, auto
 
 
-class StellarType(Enum):
-    """Enumeration of stellar types.
-
-    The values correspond to those used by COMPAS.  Only a subset
-    (black holes, neutron stars and white dwarfs) is used by the
-    binned integrator.
-    """
-
+class STELLAR_TYPE(Enum):
     MS_LTE_07 = 0
     MS_GT_07 = auto()
     HERTZSPRUNG_GAP = auto()
@@ -41,12 +23,10 @@ class StellarType(Enum):
     BINARY_STAR = auto()
     NONE = auto()
 
+BH = [STELLAR_TYPE.BLACK_HOLE]
+NS = [STELLAR_TYPE.NEUTRON_STAR]
+WD = [STELLAR_TYPE.HELIUM_WHITE_DWARF,
+      STELLAR_TYPE.CARBON_OXYGEN_WHITE_DWARF,
+      STELLAR_TYPE.HELIUM_WHITE_DWARF,
+      STELLAR_TYPE.OXYGEN_NEON_WHITE_DWARF]
 
-# Convenience aliases for compact object categories
-BH = [StellarType.BLACK_HOLE]
-NS = [StellarType.NEUTRON_STAR]
-WD = [
-    StellarType.HELIUM_WHITE_DWARF,
-    StellarType.CARBON_OXYGEN_WHITE_DWARF,
-    StellarType.OXYGEN_NEON_WHITE_DWARF,
-]
