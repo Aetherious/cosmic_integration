@@ -17,9 +17,9 @@ or generate plots see :mod:`cosmic_integration_dasein.cli` and
 
 """
 
-from .compas_data import CompasData  # noqa: F401
-from .rate import find_detection_rate  # noqa: F401
-from .cosmology import get_cosmology  # noqa: F401
+from .compas_data import CompasData
+from .rate import find_detection_rate
+from .cosmology import get_cosmology
 
 __all__ = [
     "CompasData",
