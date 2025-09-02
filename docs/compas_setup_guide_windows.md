@@ -1,4 +1,4 @@
-# Setup Guide for COMPAS on Windows
+# COMPAS Setup Guide for Windows
 
 ### Navigation
 
