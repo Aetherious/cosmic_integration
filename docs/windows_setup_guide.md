@@ -1,4 +1,4 @@
-# Setup Guide for COMPAS & Cosmic Integration on Windows
+# Setup Guide for COMPAS on Windows
 
 ### Navigation
 
@@ -13,6 +13,8 @@
 - [Section 9: conda-forge Python Environment Manager](#section-9-conda-forge-python-environment-manager)
 - [Section 10: Setup (compas_py) Python Environment](#section-10-setup-compas_py-python-environment)
 - [Section 11: Install Python Modules to compas_py Environment](#section-11-install-python-modules-to-compas_py-environment)
+- [Section 12: Create Jupyter Notebooks](#section-12-create-jupyter-notebooks)
+- [Section 13: Mounting External Storage Devices](#section-13-mounting-external-storage-devices)
 
 ## Section 1: Windows Subsystem for Linux (WSL)
 
@@ -246,3 +248,28 @@
         - tornado
         - traitlets
         - wcwidth
+
+## Section 12: Create Jupyter Notebooks
+
+### Create Notebooks Directory
+
+1. Open terminal (Ctrl+`).
+2. Change to home directory: `cd ~`
+3. Make new directory for notebooks: `mkdir notebooks`
+4. Change to notebooks directory: `cd ~/notebooks`
+
+### Create Jupyter Notebook
+
+1. File > New File... 
+2. your-filename.ipynb
+3. Select newly created file to open.
+4. In the top-right section of notebook, choose "Select Kernel" or "Detecting Kernels".
+5. Select Kernel > Python Environments... > compas_py (Python <version#>) miniforge3/envs/compas_py/bin/python
+
+## Section 13: Mounting External Storage Devices
+
+1. Open terminal (Ctrl+`).
+2. Mount external storage device on Windows D: drive:
+    - `sudo mount -t drvfs D: /mnt/d`
+    - `sudo mount -t drvfs E: /mnt/e`
+    - etc.
